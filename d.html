@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>من سيربح المليون</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #1e3a8a, #4c51bf);
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .game-area {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .money-ladder {
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .ladder-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .ladder-item.current {
+            background-color: gold;
+            color: black;
+        }
+
+        .ladder-item.safe {
+            background-color: green;
+        }
+
+        .question {
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .option {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .option:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .option.correct {
+            background: green;
+        }
+
+        .option.wrong {
+            background: red;
+        }
+
+        .start-button {
+            background: gold;
+            color: black;
+            padding: 15px 30px;
+            font-size: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .start-button:hover {
+            background: #fcd34d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-area">
+            <div id="start-screen">
+                <h1>من سيربح المليون</h1>
+                <h2>Man Sayarba7 L3aqa</h2>
+                <button class="start-button" onclick="startGame()">ابدأ اللعبة</button>
+            </div>
+
+            <div id="question-screen" style="display: none;">
+                <div class="question" id="question"></div>
+                <div class="options" id="options"></div>
+            </div>
+
+            <div id="end-screen" style="display: none; text-align: center;">
+                <h2 id="end-message"></h2>
+                <button class="start-button" onclick="startGame()">إعادة اللعب</button>
+            </div>
+        </div>
+
+        <div class="money-ladder" id="money-ladder"></div>
+    </div>
+
+    <script>
+        const MONEY_LADDER = [
+            { amount: 100, safe: false },
+            { amount: 200, safe: false },
+            { amount: 300, safe: false },
+            { amount: 500, safe: false },
+            { amount: 1000, safe: true },
+            { amount: 2000, safe: false },
+            { amount: 4000, safe: false },
+            { amount: 8000, safe: false },
+            { amount: 16000, safe: true },
+            { amount: 32000, safe: false },
+            { amount: 64000, safe: false },
+            { amount: 125000, safe: false },
+            { amount: 250000, safe: true },
+            { amount: 500000, safe: false },
+            { amount: 1000000, safe: true }
+        ].reverse();
+
+        const QUESTIONS = [
+            { question: "Who has the most beautiful smile in the world?", options: ["Hatima", "Emma Watson", "Maryam 💖", "Angelina Jolie"], correctAnswer: 2 },
+            { question: "What is Seemo's favorite thing about Maryam?", options: ["Her eyes", "Her intelligence", "Her voice", "All of the above"], correctAnswer: 3 },
+            { question: "Chno smyet khalti mamat Maryam?", options: ["Khalti Mouna", "Khalti Loubna", "Khalti Bouchra", "Khalti Nadia"], correctAnswer: 0 },
+            { question: "3lach dak nhar Seemo machafch Maryam m3a mamaha f tomobile?", options: ["Kan Mbaw9", "Kan Sekran", "Kan Mbennej", "Kan Makanch"], correctAnswer: 2 },
+            { question: "Where did Seemo and Maryam first meet?", options: ["At a coffee shop", "At university", "At a park", "Online"], correctAnswer: 1 },
+            { question: "akmil lmatal : l3ziz 3la ... 3amro maytkhas", options: ["Mimto", "Maryam", "Sidna (laynsro ofc)", "Tidasse"], correctAnswer: 0 },
+            { question: "Tidasse's first love ever?", options: ["Hiba", "Tia", "Seemo", "Aya"], correctAnswer: 3 },
+            { question: "A7san makla tayyebha Tidasse f7yato o3amro ay3wd ytayb b7alha?", options: ["Tajine", "L3des", "L7rira", "Rfissa"], correctAnswer: 1 },
+            { question: "What did Maryam ask Seemo when they first met?", options: ["Where is the cafeteria?", "Where is Block D?", "Can you help me with something?", "What's your name?"], correctAnswer: 1 },
+            { question: "What would Seemo say to Maryam if the world were listening?", options: ["I love you forever.", "You are my everything.", "You deserve the world and more.", "All of the above"], correctAnswer: 3 },
+            { question: "chkun kiswb a7san makla fl3alam?", options: ["Gordon Ramsay", "Seemo hhhhhhhhh", "Maryam", "Tidasse"], correctAnswer: 2 },
+            { question: "What is Seemo's biggest fear?", options: ["mayvalidich", "ymout", "ymrad", "yfiq chi nhar oylqa maryam makaynach f7yato"], correctAnswer: 3 },
+            { question: "imta ghatfna denya?", options: ["fach atzwj hiba", "fach seemo aydir labas", "fach tidasse ayrkeb senna", "f 2029"], correctAnswer: 2 },
+            { question: "Seemo's favorite football club?", options: ["Real madrid", "Barcelona", "Raja", "Wydad"], correctAnswer: 0 },
+            { question: "chno kigol seemo o Maryam fach kibghiw imchiw l toilette?", options: ["anmchi nboul", "anmchi ndir pipi", "anmchi ltoilette", "anmchi ncharwel"], correctAnswer: 3 }
+			
+        ];
+
+        let currentQuestionIndex = 0;
+        let currentMoney = 0;
+
+        function startGame() {
+            currentQuestionIndex = 0;
+            currentMoney = 0;
+            document.getElementById("start-screen").style.display = "none";
+            document.getElementById("question-screen").style.display = "block";
+            document.getElementById("end-screen").style.display = "none";
+            renderMoneyLadder();
+            showQuestion();
+        }
+
+        function renderMoneyLadder() {
+            const ladder = document.getElementById("money-ladder");
+            ladder.innerHTML = "";
+            MONEY_LADDER.forEach((level, index) => {
+                const div = document.createElement("div");
+                div.className = "ladder-item";
+                div.textContent = `${level.amount} درهم`;
+                if (index === currentQuestionIndex) div.classList.add("current");
+                if (level.safe) div.classList.add("safe");
+                ladder.appendChild(div);
+            });
+        }
+
+        function showQuestion() {
+            const question = QUESTIONS[currentQuestionIndex];
+            document.getElementById("question").textContent = question.question;
+            const optionsContainer = document.getElementById("options");
+            optionsContainer.innerHTML = "";
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement("button");
+                button.className = "option";
+                button.textContent = option;
+                button.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selectedIndex) {
+            const question = QUESTIONS[currentQuestionIndex];
+            const buttons = document.querySelectorAll(".option");
+
+            buttons.forEach((button, index) => {
+                button.disabled = true;
+                if (index === question.correctAnswer) button.classList.add("correct");
+                if (index === selectedIndex && index !== question.correctAnswer) button.classList.add("wrong");
+            });
+
+            if (selectedIndex === question.correctAnswer) {
+                currentMoney = MONEY_LADDER[currentQuestionIndex].amount;
+                currentQuestionIndex++;
+                setTimeout(() => {
+                    if (currentQuestionIndex < QUESTIONS.length) {
+                        showQuestion();
+                        renderMoneyLadder();
+                    } else {
+                        endGame("مبروك! ربحت المليون!");
+                    }
+                }, 1000);
+            } else {
+                endGame("للأسف، أنت خسرت!");
+            }
+        }
+
+        function endGame(message) {
+            document.getElementById("question-screen").style.display = "none";
+            document.getElementById("end-screen").style.display = "block";
+            document.getElementById("end-message").textContent = message;
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
